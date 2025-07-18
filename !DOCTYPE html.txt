@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stack Game While Loading</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+
+    .left-panel {
+      flex: 1;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-right: 2px solid #ccc;
+    }
+
+    .right-panel {
+      flex: 1;
+      background: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    canvas {
+      border: 2px solid #666;
+      background: #eee;
+    }
+
+    .main-content {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      color: black;
+      font-size: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="gameContainer">
+    <div class="left-panel">
+      <canvas id="gameCanvas" width="200" height="300" tabindex="0"></canvas>
+    </div>
+    <div class="right-panel">
+      <div>Loading Main Tab...</div>
+      <div style="font-size: 16px; margin-top: 10px;">Please wait ⏳</div>
+    </div>
+  </div>
+
+  <div class="main-content" id="mainContent">
+    ✅ Main Tab Loaded!
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const stack = [];
+    let blockWidth = 100;
+    let blockHeight = 20;
+    let speed = 2;
+    let direction = 1;
+    let currentX = 50;
+    let level = 0;
+    let gameRunning = true;
+
+    function drawBlock(x, y, width) {
+      ctx.fillStyle = "#3498db";
+      ctx.fillRect(x, y, width, blockHeight);
+    }
+
+    function draw() {
+      if (!gameRunning) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw stacked blocks
+      for (let i = 0; i < stack.length; i++) {
+        drawBlock(stack[i].x, canvas.height - (i + 1) * blockHeight, stack[i].width);
+      }
+
+      // Draw moving block
+      drawBlock(currentX, canvas.height - (stack.length + 1) * blockHeight, blockWidth);
+
+      currentX += speed * direction;
+      if (currentX <= 0 || currentX + blockWidth >= canvas.width) {
+        direction *= -1;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    function placeBlock() {
+      if (!gameRunning) return;
+
+      const y = canvas.height - (stack.length + 1) * blockHeight;
+      const prev = stack[stack.length - 1];
+
+      if (prev) {
+        const overlapStart = Math.max(currentX, prev.x);
+        const overlapEnd = Math.min(currentX + blockWidth, prev.x + prev.width);
+        const overlap = overlapEnd - overlapStart;
+
+        if (overlap <= 0) {
+          alert("Game Over! Reload to try again.");
+          gameRunning = false;
+          return;
+        }
+
+        blockWidth = overlap;
+        currentX = overlapStart;
+      }
+
+      stack.push({ x: currentX, width: blockWidth });
+      currentX = 0;
+      direction = 1;
+      level++;
+    }
+
+    // Make sure canvas is focusable and gets focus
+    canvas.focus();
+
+    // Prevent default space scrolling
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+      }
+    });
+
+    // Trigger game on space key
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "Space") {
+        placeBlock();
+      }
+    });
+
+    draw();
+
+    // Simulate main tab loading complete
+    setTimeout(() => {
+      document.getElementById("gameContainer").style.display = "none";
+      document.getElementById("mainContent").style.display = "flex";
+    }, 10000); // 10 seconds
+  </script>
+</body>
+</html>
